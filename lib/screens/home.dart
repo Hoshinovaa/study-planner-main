@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'add_target_screen.dart';
-import 'notification.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,35 +14,6 @@ class _HomeScreenState extends State<HomeScreen> {
   DateTime _focusedDate = DateTime.now();
   DateTime _selectedDate = DateTime.now();
 
-  List<Map<String, dynamic>> _myTasks = [
-    {
-      "title": "Aplikasi Perangkat Bergerak",
-      "percent": "90%",
-      "value": 0.9,
-      "isDone": false,
-      "subTasks": [
-        {"name": "Progres Tubes", "date": "18 April 2026", "time": "23:59"},
-        {"name": "Tugas Individu 5", "date": "6 April 2026", "time": "23:59"},
-      ],
-    },
-    {
-      "title": "Sistem Cerdas",
-      "percent": "40%",
-      "value": 0.4,
-      "isDone": false,
-      "subTasks": [
-        {"name": "Tugas Kelompok 1", "date": "10 April 2026", "time": "12:00"},
-      ],
-    },
-    {
-      "title": "Penetrasi dan Pengujian Etika Peretasan",
-      "percent": "100%",
-      "value": 1.0,
-      "isDone": true,
-      "subTasks": [],
-    },
-  ];
-
   final List<String> _daysOfWeek = [
     "Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"
   ];
@@ -53,14 +25,12 @@ class _HomeScreenState extends State<HomeScreen> {
       DateTime(year, month, 1).weekday - 1;
 
   void _goToAddTask() async {
-    final result = await Navigator.push(
+    await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const AddTargetScreen()),
+      MaterialPageRoute(
+        builder: (context) => const AddTargetScreen(),
+      ),
     );
-
-    if (result != null) {
-      setState(() => _myTasks.add(result));
-    }
   }
 
   @override
@@ -104,17 +74,6 @@ class _HomeScreenState extends State<HomeScreen> {
             Text("Selamat Belajar Bestie."),
           ],
         ),
-        IconButton(
-          icon: const Icon(Icons.notifications_none_outlined, size: 30),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const NotificationPage(),
-              ),
-            );
-          },
-        ),
       ],
     );
   }
@@ -140,16 +99,68 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTaskList() {
     return SizedBox(
       height: 180,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: _myTasks.length,
-        itemBuilder: (context, index) {
-          final task = _myTasks[index];
-          bool isDone = task["isDone"] ?? false;
+      child: StreamBuilder<QuerySnapshot>(
+        stream:FirebaseFirestore.instance
+          .collection('tasks')
+          .where(
+            'uid',
+            isEqualTo: FirebaseAuth.instance.currentUser!.uid,
+          )
+            .orderBy('createdAt', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState ==
+              ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
 
-          return Stack(
-            children: [
-              Container(
+          if (!snapshot.hasData ||
+              snapshot.data!.docs.isEmpty) {
+            return const Center(
+              child: Text("Belum ada tugas"),
+            );
+          }
+
+          final docs = snapshot.data!.docs;
+
+          Map<String, List<Map<String, dynamic>>> groupedTasks = {};
+          for (var doc in docs) {
+            final task = doc.data() as Map<String, dynamic>;
+
+            final course = task["course"] ?? "Tanpa Mata Kuliah";
+
+            if (!groupedTasks.containsKey(course)) {
+              groupedTasks[course] = [];
+            }
+
+            groupedTasks[course]!.add(task);
+          }
+
+          return ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: groupedTasks.length,
+            itemBuilder: (context, index) {
+              final courseName =
+                  groupedTasks.keys.elementAt(index);
+
+              final tasks =
+                  groupedTasks[courseName]!;
+
+              final totalTask = tasks.length;
+
+              final completedTask = tasks.where((task) {
+                return task["status"] == "SELESAI";
+              }).length;
+
+              final double value =
+                  totalTask == 0 ? 0 : completedTask / totalTask;
+
+              final percent =
+                  (value * 100).toInt();
+
+              return Container(
                 width: 280,
                 margin: const EdgeInsets.only(right: 15),
                 padding: const EdgeInsets.all(15),
@@ -159,104 +170,87 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: Row(
                   children: [
-                    isDone
-                        ? const Icon(Icons.wb_sunny,
-                            size: 55, color: Colors.orange)
-                        : _buildProgressCircle(task),
-                    const SizedBox(width: 15),
-                    _buildTaskDetails(task, isDone),
-                  ],
-                ),
-              ),
-              if (isDone)
-                Positioned(
-                  right: 10,
-                  top: 5,
-                  child: IconButton(
-                    icon: const Icon(Icons.cancel,
-                        color: Colors.red, size: 20),
-                    onPressed: () =>
-                        setState(() => _myTasks.removeAt(index)),
-                  ),
-                ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildProgressCircle(Map<String, dynamic> task) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        SizedBox(
-          width: 70,
-          height: 70,
-          child: CircularProgressIndicator(
-            value: task["value"],
-            strokeWidth: 8,
-            color: const Color(0xFF6A0DAD),
-            backgroundColor: Colors.grey[200],
-          ),
-        ),
-        Text(task["percent"],
-            style: const TextStyle(fontWeight: FontWeight.bold)),
-      ],
-    );
-  }
-
-  Widget _buildTaskDetails(Map<String, dynamic> task, bool isDone) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            task["title"],
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 8),
-          isDone
-              ? const Text(
-                  "Mantappp\nUdah kelar tugas nya bestie",
-                  style: TextStyle(fontSize: 11, color: Colors.grey),
-                )
-              : Column(
-                  children: (task["subTasks"] as List)
-                      .map(
-                        (sub) => Padding(
-                          padding: const EdgeInsets.only(bottom: 5),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.check_circle,
-                                  size: 12, color: Color(0xFF6A0DAD)),
-                              const SizedBox(width: 5),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Text(sub["name"],
-                                        style: const TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold)),
-                                    Text(
-                                      "${sub["date"]} - ${sub["time"]}",
-                                      style: const TextStyle(
-                                          fontSize: 8, color: Colors.grey),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 70,
+                          height: 70,
+                          child: CircularProgressIndicator(
+                            value: value,
+                            strokeWidth: 8,
+                            color: const Color(0xFF6A0DAD),
+                            backgroundColor:
+                                Colors.grey.shade200,
                           ),
                         ),
-                      )
-                      .toList(),
+                        Text(
+                          "$percent%",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(width: 15),
+
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment:
+                            MainAxisAlignment.center,
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            courseName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          Text(
+                            "$completedTask dari $totalTask tugas selesai",
+                            style: const TextStyle(
+                              color: Colors.grey,
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          Text(
+                            "$percent%",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: percent == 100
+                                  ? Colors.green
+                                  : Colors.deepPurple,
+                            ),
+                          ),
+
+                          const SizedBox(height: 5),
+
+                          Text(
+                            "$totalTask tugas",
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey,
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-        ],
+              );
+            },
+          );
+        },
       ),
     );
   }

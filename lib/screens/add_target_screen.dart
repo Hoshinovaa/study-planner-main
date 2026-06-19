@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart';
 import 'map_picker_screen.dart';
+import '../services/notification_service.dart';
+import '../services/firestore_service.dart';
 
 class AddTargetScreen extends StatefulWidget {
   const AddTargetScreen({super.key});
@@ -20,45 +22,67 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
 
   LatLng? selectedLocation;
   String? selectedAddress;
+  DateTime? selectedDeadline;
 
   /// TANGGAL
   Future<void> _pickDate() async {
-    final today = DateTime.now();
+    final now = DateTime.now();
 
-    DateTime? picked = await showDatePicker(
+    // Pilih tanggal
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: today,
+      initialDate: now,
       firstDate: DateTime(
-        today.year,
-        today.month,
-        today.day,
+        now.year,
+        now.month,
+        now.day,
       ),
       lastDate: DateTime(2100),
-      selectableDayPredicate: (DateTime day) {
-        final currentDay = DateTime(
-          day.year,
-          day.month,
-          day.day,
-        );
-
-        final todayOnly = DateTime(
-          today.year,
-          today.month,
-          today.day,
-        );
-
-        return !currentDay.isBefore(todayOnly);
-      },
     );
 
-    if (picked != null) {
-      setState(() {
-        _deadlineController.text =
-            "${picked.day}/${picked.month}/${picked.year}";
-      });
-    }
-  }
+    if (pickedDate == null) return;
 
+    // Pilih jam
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+
+    if (pickedTime == null) return;
+
+    final DateTime deadline = DateTime(
+      pickedDate.year,
+      pickedDate.month,
+      pickedDate.day,
+      pickedTime.hour,
+      pickedTime.minute,
+    );
+
+    if (deadline.isBefore(now)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Deadline tidak boleh kurang dari waktu saat ini",
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
+    setState(() {
+      selectedDeadline = deadline;
+
+      _deadlineController.text =
+          "${pickedDate.day.toString().padLeft(2, '0')}/"
+          "${pickedDate.month.toString().padLeft(2, '0')}/"
+          "${pickedDate.year} "
+          "${pickedTime.hour.toString().padLeft(2, '0')}:"
+          "${pickedTime.minute.toString().padLeft(2, '0')}";
+    });
+  }
+ 
   /// PILIH LOKASI
   Future<void> _pickLocation() async {
     final result = await Navigator.push(
@@ -96,31 +120,44 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
   }
 
   /// SIMPAN TASK
-  void _saveTask() {
-    if (_titleController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Nama tugas wajib diisi")),
-      );
-      return;
-    }
-
-    Navigator.pop(context, {
-      "title": _titleController.text,
-      "subtitle": selectedCourse,
-      "deadline":
-          _deadlineController.text.isEmpty ? "-" : _deadlineController.text,
-
-      "percent": "${(_progress * 100).toInt()}%",
-      "value": _progress,
-      "isDone": _progress == 1,
-      "status": "BELUM DIKERJAKAN",
-
-      "locationName": _locationNameController.text,
-      "lat": selectedLocation?.latitude,
-      "lng": selectedLocation?.longitude,
-      "address": selectedAddress,
-    });
+  Future<void> _saveTask() async {
+  if (_titleController.text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Nama tugas wajib diisi"),
+      ),
+    );
+    return;
   }
+
+  final firestore = FirestoreService();
+
+  await firestore.addTask(
+    title: _titleController.text,
+    course: selectedCourse,
+    deadline:
+        _deadlineController.text.isEmpty
+            ? "-"
+            : _deadlineController.text,
+    progress: _progress,
+    locationName: _locationNameController.text,
+    address: selectedAddress,
+    lat: selectedLocation?.latitude,
+    lng: selectedLocation?.longitude,
+  );
+
+  if (selectedDeadline != null) {
+    await NotificationService.scheduleDeadlineNotification(
+      id: DateTime.now().millisecondsSinceEpoch,
+      taskTitle: _titleController.text,
+      deadline: selectedDeadline!,
+    );
+  }
+
+  if (mounted) {
+    Navigator.pop(context);
+  }
+}
 
   @override
   Widget build(BuildContext context) {

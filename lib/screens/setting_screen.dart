@@ -47,6 +47,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       appBar: AppBar(
         backgroundColor: const Color(0xFF6A0DAD),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text(
           "Pengaturan",
           style: TextStyle(color: Colors.white),

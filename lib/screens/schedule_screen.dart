@@ -5,6 +5,24 @@ class ScheduleScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final List<Map<String, String>> notifications = [
+      {
+        "title": "Tugas Hampir Deadline!",
+        "desc": "Progres Tubes - Aplikasi Perangkat Bergerak",
+        "time": "Hari ini, 23:59"
+      },
+      {
+        "title": "Reminder Belajar",
+        "desc": "Jangan lupa lanjut Sistem Cerdas ya!",
+        "time": "Hari ini, 10:00"
+      },
+      {
+        "title": "Tugas Selesai 🎉",
+        "desc": "Penetrasi dan Pengujian Etika Peretasan",
+        "time": "Kemarin"
+      },
+    ];
+
     return Scaffold(
       backgroundColor: const Color(0xFFECEFF1),
 
@@ -12,83 +30,104 @@ class ScheduleScreen extends StatelessWidget {
         backgroundColor: const Color(0xFF6A0DAD),
         elevation: 0,
         centerTitle: true,
-        title: const Text("Jadwal",
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          ),
-        ),  
-      ),
-
-      body: Column(
-        children: [
-          const SizedBox(height: 40),
-
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.orange[100],
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.notifications,
-              size: 60,
-              color: Colors.orange,
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          const Text( "Pemberitahuan Notifikasi",
+        title: const Text(
+          "Notifikasi",
           style: TextStyle(
-            fontSize: 18,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
-            ),
           ),
-
-          const SizedBox(height: 10),
-
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 30),
-            child: Text(
-              "KERJAIN WOY TUGAS NYA!!! MAU JADI ARTEFAK KAMPUS LU????",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.black54),
-            ),
-          ),
-
-          const SizedBox(height: 30),
-
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
-                )
-              ],
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("Metopen", style: TextStyle(fontSize: 16)),
-                Text(
-                  "10.00",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
+
+      body: notifications.isEmpty
+          ? const Center(
+              child: Text(
+                "Belum ada notifikasi",
+                style: TextStyle(color: Colors.grey),
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(15),
+              itemCount: notifications.length,
+              itemBuilder: (context, index) {
+                final notif = notifications[index];
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildIcon(notif["title"]!),
+                      const SizedBox(width: 12),
+
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              notif["title"]!,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+
+                            Text(
+                              notif["desc"]!,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            const SizedBox(height: 6),
+
+                            Text(
+                              notif["time"]!,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
     );
+  }
+
+  Widget _buildIcon(String title) {
+    if (title.contains("Deadline")) {
+      return const Icon(
+        Icons.warning_amber_rounded,
+        color: Colors.red,
+        size: 28,
+      );
+    } else if (title.contains("Reminder")) {
+      return const Icon(
+        Icons.notifications_active,
+        color: Colors.orange,
+        size: 28,
+      );
+    } else {
+      return const Icon(
+        Icons.check_circle,
+        color: Colors.green,
+        size: 28,
+      );
+    }
   }
 }

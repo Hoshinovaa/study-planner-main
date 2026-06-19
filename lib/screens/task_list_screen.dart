@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import '../widgets/task_card.dart';
 import 'task_detail_screen.dart';
 
@@ -10,49 +13,22 @@ class TaskListScreen extends StatefulWidget {
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
-
-  List<Map<String, dynamic>> tasks = [
-    {
-      "title": "Aplikasi Perangkat Bergerak",
-      "subtitle": "Progres Tubes",
-      "deadline": "18 April 2026",
-      "status": "DALAM PENGERJAAN",
-    },
-    {
-      "title": "Sistem Cerdas IoT",
-      "subtitle": "Tugas Kelompok",
-      "deadline": "20 April 2026",
-      "status": "BELUM DIKERJAKAN",
-    },
-  ];
-
   /// TAMBAH TASK
-  void _goToAddTask() async {
-    final result = await Navigator.pushNamed(context, '/add-target');
-
-    if (result != null && result is Map<String, dynamic>) {
-      setState(() {
-        tasks.add(result);
-      });
-    }
+  Future<void> _goToAddTask() async {
+    await Navigator.pushNamed(context, '/add-target');
   }
 
-  /// DELETE TASK
-  void _deleteTask(int index) {
-    setState(() {
-      tasks.removeAt(index);
+  /// UPDATE STATUS
+  Future<void> updateStatus(
+    String docId,
+    String newStatus,
+  ) async {
+    await FirebaseFirestore.instance
+        .collection('tasks')
+        .doc(docId)
+        .update({
+      'status': newStatus,
     });
-  }
-
-  /// EDIT TASK
-  void _editTask(int index) async {
-    final result = await Navigator.pushNamed(context, '/add-target');
-
-    if (result != null && result is Map<String, dynamic>) {
-      setState(() {
-        tasks[index] = result;
-      });
-    }
   }
 
   /// DETAIL TASK
@@ -70,7 +46,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFECEFF1),
 
-      /// APPBAR
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: const Color(0xFF6A0DAD),
@@ -83,43 +58,94 @@ class _TaskListScreenState extends State<TaskListScreen> {
         ),
       ),
 
-      /// LIST TASK
-      body: ListView.builder(
-        padding: const EdgeInsets.all(15),
-        itemCount: tasks.length,
-        itemBuilder: (context, index) {
-          final task = tasks[index];
-
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: GestureDetector(
-              onTap: () => _viewDetail(task),
-              child: TaskCard(
-                title: task["title"] ?? "-",
-                subtitle: task["subtitle"] ?? "-",
-                deadline: task["deadline"] ?? "-",
-                status: task["status"] ?? "BELUM DIKERJAKAN",
-
-                /// FIX UTAMA (UPDATE STATUS)
-                onStatusChange: (newStatus) {
-                  setState(() {
-                    tasks[index]["status"] = newStatus;
-                  });
-                },
-
-                onEdit: () => _editTask(index),
-                onDelete: () => _deleteTask(index),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+          .collection('tasks')
+          .where(
+            'uid',
+            isEqualTo: FirebaseAuth.instance.currentUser!.uid,
+          )
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Error: ${snapshot.error}',
               ),
-            ),
+            );
+          }
+
+          if (snapshot.connectionState ==
+              ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          if (!snapshot.hasData ||
+              snapshot.data!.docs.isEmpty) {
+            return const Center(
+              child: Text(
+                "Belum ada tugas",
+                style: TextStyle(fontSize: 16),
+              ),
+            );
+          }
+
+          final docs = snapshot.data!.docs;
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(15),
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              final doc = docs[index];
+
+              final task =
+                  doc.data() as Map<String, dynamic>;
+
+              return Padding(
+                padding:
+                    const EdgeInsets.only(bottom: 12),
+                child: GestureDetector(
+                  onTap: () => _viewDetail(task),
+                  child: TaskCard(
+                    title: task["title"] ?? "-",
+                    subtitle: task["course"] ?? "-",
+                    deadline: task["deadline"] ?? "-",
+                    status: task["status"] ??
+                        "BELUM DIKERJAKAN",
+
+                    onStatusChange: (newStatus) async {
+                      await updateStatus(
+                        doc.id,
+                        newStatus,
+                      );
+                    },
+
+                    onEdit: () {},
+
+                    onDelete: () async {
+                      await FirebaseFirestore.instance
+                          .collection('tasks')
+                          .doc(doc.id)
+                          .delete();
+                    },
+                  ),
+                ),
+              );
+            },
           );
         },
       ),
 
-      /// FLOATING BUTTON
       floatingActionButton: FloatingActionButton(
         onPressed: _goToAddTask,
         backgroundColor: Colors.deepPurple,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
       ),
     );
   }

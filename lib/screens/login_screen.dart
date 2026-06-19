@@ -1,7 +1,67 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+
+  bool isLoading = false;
+
+  Future<void> login() async {
+    try {
+      setState(() {
+        isLoading = true;
+      });
+
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      Navigator.pushReplacementNamed(
+        context,
+        '/home',
+      );
+    } on FirebaseAuthException catch (e) {
+      String message = "Login gagal";
+
+      if (e.code == 'user-not-found') {
+        message = "Email tidak ditemukan";
+      }
+
+      if (e.code == 'wrong-password') {
+        message = "Password salah";
+      }
+
+      if (e.code == 'invalid-credential') {
+        message = "Email atau password salah";
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,11 +74,13 @@ class LoginScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 40),
 
-              /// LOGO & TITLE
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: const [
-                  Text("📖", style: TextStyle(fontSize: 28)),
+                  Text(
+                    "📖",
+                    style: TextStyle(fontSize: 28),
+                  ),
                   SizedBox(width: 10),
                   Text(
                     "STUDY PLANNER",
@@ -34,18 +96,24 @@ class LoginScreen extends StatelessWidget {
               const SizedBox(height: 30),
 
               const Text(
-                "SELAMAT DATANG KEMBALI",
-                style: TextStyle(fontWeight: FontWeight.bold),
+                "SELAMAT DATANG ",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
 
-              const Text("Login Untuk Melanjutkan"),
+              const Text(
+                "Login Untuk Melanjutkan",
+              ),
 
               const SizedBox(height: 30),
 
-              /// USERNAME
+              /// EMAIL
               TextField(
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
-                  hintText: "Nama Pengguna",
+                  hintText: "Email",
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
@@ -59,9 +127,10 @@ class LoginScreen extends StatelessWidget {
 
               /// PASSWORD
               TextField(
+                controller: passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
-                  hintText: "Kata sandi",
+                  hintText: "Password",
                   filled: true,
                   fillColor: Colors.white,
                   suffixIcon: const Icon(Icons.visibility_off),
@@ -74,37 +143,37 @@ class LoginScreen extends StatelessWidget {
 
               const SizedBox(height: 25),
 
-              /// BUTTON LOGIN
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/home');
-                  },
+                  onPressed: isLoading ? null : login,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6A0DAD),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                     ),
                   ),
-                  child: const Text(
-                    "Masuk",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: isLoading
+                      ? const CircularProgressIndicator(
+                          color: Colors.white,
+                        )
+                      : const Text(
+                          "Masuk",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
 
               const SizedBox(height: 20),
 
-              const Text("Or continue with"),
+              const Text("Atau lanjutkan dengan"),
 
               const SizedBox(height: 15),
 
-              /// SOCIAL LOGIN
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -118,14 +187,16 @@ class LoginScreen extends StatelessWidget {
 
               const Spacer(),
 
-              /// REGISTER LINK
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text("Belum punya akun? "),
                   GestureDetector(
                     onTap: () {
-                      Navigator.pushNamed(context, '/register');
+                      Navigator.pushNamed(
+                        context,
+                        '/register',
+                      );
                     },
                     child: const Text(
                       "Daftar di sini",
@@ -146,8 +217,7 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  /// WIDGET ICON SOSIAL
-  static Widget socialIcon(String text) {
+  Widget socialIcon(String text) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: const BoxDecoration(
@@ -156,7 +226,9 @@ class LoginScreen extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 18),
+        style: const TextStyle(
+          fontSize: 18,
+        ),
       ),
     );
   }

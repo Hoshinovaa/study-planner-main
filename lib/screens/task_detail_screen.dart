@@ -90,7 +90,6 @@ class TaskDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     buildDetailRow("Mata Kuliah", task["title"] ?? "-"),
-                    buildDetailRow("Materi", task["subtitle"] ?? "-"),
                     buildDetailRow("Tanggal", task["deadline"] ?? "-"),
                     buildDetailRow("Waktu", "14:00 - 17:00"),
                     buildDetailRow("Durasi", "3 jam"),

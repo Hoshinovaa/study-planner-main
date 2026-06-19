@@ -28,8 +28,8 @@ class CustomBottomNav extends StatelessWidget {
           label: "Tugas",
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.schedule),
-          label: "Jadwal",
+          icon: Icon(Icons.notifications),
+          label: "Notifikasi",
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.account_circle),

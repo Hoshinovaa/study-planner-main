@@ -7,8 +7,22 @@ import 'screens/add_target_screen.dart';
 import 'screens/schedule_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/setting_screen.dart';
+import 'services/notification_service.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  tz.initializeTimeZones();
+
+  await NotificationService.init();
+
   runApp(const MyApp());
 }
 
