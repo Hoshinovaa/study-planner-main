@@ -83,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ================= HEADER =================
+  /// HEADER
   Widget _buildHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -107,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
   
-  // ================= SECTION HEADER =================
+  // SECTION HEADER
   Widget _buildSectionHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -120,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ================= TASK LIST =================
+  // TASK LIST
   Widget _buildTaskList() {
     return SizedBox(
       height: 180,
@@ -280,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ================= CALENDAR =================
+  /// CALENDAR
   Widget _buildCalendarCard() {
     int daysInMonth =
         _getDaysInMonth(_focusedDate.year, _focusedDate.month);

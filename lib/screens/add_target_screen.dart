@@ -26,9 +26,7 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
   String? selectedAddress;
   DateTime? selectedDeadline;
 
-  /// ======================
-  /// PICK DATE & TIME
-  /// ======================
+  /// DATE & TIME
   Future _pickDate() async {
     final now = DateTime.now();
 
@@ -79,9 +77,7 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
     });
   }
 
-  /// ======================
-  /// PICK LOCATION
-  /// ======================
+  /// LOKASI
   Future _pickLocation() async {
     final result = await Navigator.push(
       context,
@@ -120,9 +116,7 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
     }
   }
 
-  /// ======================
-  /// SAVE TASK
-  /// ======================
+  /// SIMPAN TASK
   Future _saveTask() async {
     if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -133,7 +127,7 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
 
     final firestore = FirestoreService();
 
-    /// 1. SIMPAN TASK
+    /// SIMPAN TASK
     await firestore.addTask(
       title: _titleController.text,
       course: selectedCourse,
@@ -147,7 +141,7 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
       lng: selectedLocation?.longitude,
     );
 
-    /// 2. SIMPAN NOTIF FIRESTORE
+    /// SIMPAN NOTIF FIRESTORE
     await FirebaseFirestore.instance.collection('notifications').add({
       'uid': FirebaseAuth.instance.currentUser!.uid,
       'title': 'Tugas Baru Ditambahkan',
@@ -155,7 +149,7 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
       'createdAt': FieldValue.serverTimestamp(),
     });
 
-    /// 3. SCHEDULE NOTIF H-1 JAM
+    /// SCHEDULE NOTIF H-1 JAM
     if (selectedDeadline != null) {
       await NotificationService.scheduleDeadlineNotification(
         taskId: _titleController.text,

@@ -16,7 +16,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   final TextEditingController _searchController = TextEditingController();
 
-  /// LOKASI DEFAULT TELKOM
+  /// LOKASI DEFAULT
   static const LatLng initialPosition = LatLng(-6.9730, 107.6300);
 
   /// CARI LOKASI

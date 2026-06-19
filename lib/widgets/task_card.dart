@@ -73,7 +73,7 @@ class TaskCard extends StatelessWidget {
     if (result != null && onStatusChange != null) {
       onStatusChange!(result);
 
-      /// 🔥 NOTIFIKASI SAAT SELESAI
+      /// NOTIFIKASI SAAT SELESAI
       if (result == "SELESAI") {
         try {
           await NotificationService.showInstantNotification(

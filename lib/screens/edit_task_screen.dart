@@ -250,7 +250,7 @@ class _EditTargetScreenState extends State<EditTargetScreen> {
 
             const SizedBox(height: 20),
 
-            /// PILIH LOKASI MAP
+            /// MAP
             GestureDetector(
               onTap: _pickLocation,
               child: Container(

@@ -16,7 +16,7 @@ class NotificationService {
     await _plugin.initialize(settings);
   }
 
-  /// 🔔 INSTANT NOTIF
+  /// INSTANT NOTIF
   static Future<void> showInstantNotification({
     required String title,
     required String body,
@@ -37,7 +37,7 @@ class NotificationService {
     );
   }
 
-  /// ⏰ SCHEDULE NOTIF (H-1 JAM)
+  /// SCHEDULE NOTIF (H-1 JAM)
   static Future<void> scheduleDeadlineNotification({
     required String taskId,
     required String title,
@@ -70,7 +70,7 @@ class NotificationService {
     );
   }
 
-  /// ☁️ SAVE NOTIFICATION TO FIRESTORE
+  /// SAVE NOTIFICATION TO FIRESTORE
   static Future<void> saveToFirestore({
     required String title,
     required String desc,

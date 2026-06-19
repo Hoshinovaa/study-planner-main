@@ -132,7 +132,7 @@ class ScheduleScreen extends StatelessWidget {
               },
             ),
 
-      // Tombol tes notifikasi manual
+      // TEST NOTIF BUTTON
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xFF6A0DAD),
         onPressed: () async {
