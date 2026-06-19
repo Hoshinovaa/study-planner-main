@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -10,6 +11,119 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool showUid = false;
+
+  String fullName = "";
+  String username = "";
+  String email = "";
+
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadUserData();
+  }
+
+  Future<void> loadUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (doc.exists) {
+      setState(() {
+        fullName = doc['fullName'] ?? "";
+        username = doc['username'] ?? "";
+        email = doc['email'] ?? "";
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> editProfile() async {
+    final nameController =
+        TextEditingController(text: fullName);
+
+    final usernameController =
+        TextEditingController(text: username);
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Edit Profil"),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: "Nama Lengkap",
+                  ),
+                ),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: usernameController,
+                  decoration: const InputDecoration(
+                    labelText: "Username",
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () =>
+                  Navigator.pop(context, false),
+              child: const Text("Batal"),
+            ),
+            ElevatedButton(
+              onPressed: () =>
+                  Navigator.pop(context, true),
+              child: const Text("Simpan"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != true) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .update({
+      'fullName': nameController.text.trim(),
+      'username': usernameController.text.trim(),
+    });
+
+    await user.updateDisplayName(
+      nameController.text.trim(),
+    );
+
+    setState(() {
+      fullName = nameController.text.trim();
+      username = usernameController.text.trim();
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Profil berhasil diperbarui"),
+        ),
+      );
+    }
+  }
+
   Future<void> _logout(BuildContext context) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -21,11 +135,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () =>
+                  Navigator.pop(context, false),
               child: const Text("Batal"),
             ),
             ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () =>
+                  Navigator.pop(context, true),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF6A0DAD),
               ),
@@ -56,6 +172,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
 
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
 
@@ -75,7 +199,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            /// FOTO PROFIL
             const CircleAvatar(
               radius: 50,
               backgroundColor: Color(0xFF6A0DAD),
@@ -88,10 +211,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 15),
 
-            /// NAMA USER
+            /// NAMA + TOMBOL EDIT
             Text(
-              user?.displayName?.isNotEmpty == true
-                  ? user!.displayName!
+              fullName.isNotEmpty
+                  ? fullName
                   : "Pengguna",
               style: const TextStyle(
                 fontSize: 22,
@@ -101,17 +224,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 5),
 
+            /// USERNAME
+            Text(
+              "@$username",
+              style: const TextStyle(
+                color: Colors.deepPurple,
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+              ),
+            ),
+
+            const SizedBox(height: 5),
+
             /// EMAIL
             Text(
-              user?.email ?? "Tidak ada email",
+              email,
               style: const TextStyle(
                 color: Colors.grey,
               ),
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
 
-            /// UID FIREBASE
+            /// UID
             Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: 12,
@@ -124,25 +259,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
+                  Flexible(
                     child: Text(
                       showUid
                           ? "UID: ${user?.uid ?? '-'}"
                           : "UID: ••••••••••••••••••••",
+                      textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 12,
                         color: Colors.grey,
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   ),
-
                   IconButton(
                     icon: Icon(
                       showUid
                           ? Icons.visibility
                           : Icons.visibility_off,
-                      size: 18,
                       color: Colors.grey,
                     ),
                     onPressed: () {
@@ -154,8 +287,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
+            
+            const SizedBox(height: 20),
 
-            const SizedBox(height: 30),
+            /// EDIT PROFIL
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: ListTile(
+                leading: const Icon(
+                  Icons.edit,
+                  color: Color(0xFF6A0DAD),
+                ),
+                title: const Text("Edit Profil"),
+                trailing: const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                ),
+                onTap: editProfile,
+              ),
+            ),
+
+            const SizedBox(height: 5),
 
             /// PENGATURAN
             Card(
@@ -183,27 +337,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 10),
 
-            /// TENTANG
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: const ListTile(
-                leading: Icon(
-                  Icons.info_outline,
-                  color: Color(0xFF6A0DAD),
-                ),
-                title: Text("Tentang Aplikasi"),
-                trailing: Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                ),
-              ),
-            ),
-
             const Spacer(),
 
-            /// LOGOUT BUTTON
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -221,9 +356,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6A0DAD),
+                  backgroundColor:
+                      const Color(0xFF6A0DAD),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius:
+                        BorderRadius.circular(12),
                   ),
                 ),
               ),
