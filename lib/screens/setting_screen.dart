@@ -9,7 +9,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool deadline = true;
-  bool harian = true;
   bool bunyikan = true;
 
   Widget buildSwitch(

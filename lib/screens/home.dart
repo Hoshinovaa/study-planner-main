@@ -84,12 +84,8 @@ class _HomeScreenState extends State<HomeScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         const Text(
-          "Target Hari Ini",
+          "Progress Tugas",
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        IconButton(
-          onPressed: _goToAddTask,
-          icon: const Icon(Icons.add_circle, color: Color(0xFF6A0DAD), size: 30),
         ),
       ],
     );

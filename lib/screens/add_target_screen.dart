@@ -11,7 +11,7 @@ class AddTargetScreen extends StatefulWidget {
   const AddTargetScreen({super.key});
 
   @override
-  State<AddTargetScreen> createState() => _AddTargetScreenState();
+  State createState() => _AddTargetScreenState();
 }
 
 class _AddTargetScreenState extends State<AddTargetScreen> {
@@ -26,25 +26,21 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
   String? selectedAddress;
   DateTime? selectedDeadline;
 
-  /// TANGGAL
-  Future<void> _pickDate() async {
+  /// ======================
+  /// PICK DATE & TIME
+  /// ======================
+  Future _pickDate() async {
     final now = DateTime.now();
 
-    // Pilih tanggal
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: now,
-      firstDate: DateTime(
-        now.year,
-        now.month,
-        now.day,
-      ),
+      firstDate: DateTime(now.year, now.month, now.day),
       lastDate: DateTime(2100),
     );
 
     if (pickedDate == null) return;
 
-    // Pilih jam
     final TimeOfDay? pickedTime = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
@@ -64,9 +60,7 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              "Deadline tidak boleh kurang dari waktu saat ini",
-            ),
+            content: Text("Deadline tidak boleh kurang dari waktu saat ini"),
           ),
         );
       }
@@ -84,9 +78,11 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
           "${pickedTime.minute.toString().padLeft(2, '0')}";
     });
   }
- 
-  /// PILIH LOKASI
-  Future<void> _pickLocation() async {
+
+  /// ======================
+  /// PICK LOCATION
+  /// ======================
+  Future _pickLocation() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -97,7 +93,10 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
     if (result != null && result is LatLng) {
       try {
         List<Placemark> placemarks =
-            await placemarkFromCoordinates(result.latitude, result.longitude);
+            await placemarkFromCoordinates(
+          result.latitude,
+          result.longitude,
+        );
 
         final place = placemarks.first;
 
@@ -121,54 +120,56 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
     }
   }
 
-  /// SIMPAN TASK
-  Future<void> _saveTask() async {
-  if (_titleController.text.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Nama tugas wajib diisi"),
-      ),
+  /// ======================
+  /// SAVE TASK
+  /// ======================
+  Future _saveTask() async {
+    if (_titleController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Nama tugas wajib diisi")),
+      );
+      return;
+    }
+
+    final firestore = FirestoreService();
+
+    /// 1. SIMPAN TASK
+    await firestore.addTask(
+      title: _titleController.text,
+      course: selectedCourse,
+      deadline: _deadlineController.text.isEmpty
+          ? "-"
+          : _deadlineController.text,
+      progress: _progress,
+      locationName: _locationNameController.text,
+      address: selectedAddress,
+      lat: selectedLocation?.latitude,
+      lng: selectedLocation?.longitude,
     );
-    return;
+
+    /// 2. SIMPAN NOTIF FIRESTORE
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'uid': FirebaseAuth.instance.currentUser!.uid,
+      'title': 'Tugas Baru Ditambahkan',
+      'desc': _titleController.text,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    /// 3. SCHEDULE NOTIF H-1 JAM
+    if (selectedDeadline != null) {
+      await NotificationService.scheduleDeadlineNotification(
+        taskId: _titleController.text,
+        title: _titleController.text,
+        matkul: selectedCourse,
+        deadline: selectedDeadline!,
+        playSound: true,
+      );
+    }
+
+    if (mounted) {
+      Navigator.pop(context);
+    }
   }
-
-  final firestore = FirestoreService();
-
-  await firestore.addTask(
-    title: _titleController.text,
-    course: selectedCourse,
-    deadline:
-        _deadlineController.text.isEmpty
-            ? "-"
-            : _deadlineController.text,
-    progress: _progress,
-    locationName: _locationNameController.text,
-    address: selectedAddress,
-    lat: selectedLocation?.latitude,
-    lng: selectedLocation?.longitude,
-  );
-
-  await FirebaseFirestore.instance
-      .collection('notifications')
-      .add({
-    'uid': FirebaseAuth.instance.currentUser!.uid,
-    'title': 'Tugas Baru Ditambahkan',
-    'desc': _titleController.text,
-    'createdAt': FieldValue.serverTimestamp(),
-  });
-
-  if (selectedDeadline != null) {
-    await NotificationService.scheduleDeadlineNotification(
-      id: DateTime.now().millisecondsSinceEpoch,
-      taskTitle: _titleController.text,
-      deadline: selectedDeadline!,
-    );
-  }
-
-  if (mounted) {
-    Navigator.pop(context);
-  }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -291,15 +292,11 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
 
               const SizedBox(height: 20),
 
-              const Text("Titik Lokasi Belajar",
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-
               GestureDetector(
                 onTap: _pickLocation,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 15),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -310,11 +307,9 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
                         child: Text(
                           selectedLocation == null
                               ? "Pilih lokasi belajar"
-                              : (_locationNameController.text.isNotEmpty
-                                  ? _locationNameController.text
-                                  : (selectedAddress ??
-                                      "Lat: ${selectedLocation!.latitude.toStringAsFixed(5)}, "
-                                      "Lng: ${selectedLocation!.longitude.toStringAsFixed(5)}")),
+                              : (selectedAddress ??
+                                  "Lat: ${selectedLocation!.latitude.toStringAsFixed(5)}, "
+                                  "Lng: ${selectedLocation!.longitude.toStringAsFixed(5)}"),
                           style: TextStyle(
                             color: selectedLocation == null
                                 ? Colors.grey

@@ -1,81 +1,88 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class NotificationService {
-  static final FlutterLocalNotificationsPlugin notifications =
+  static final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
 
   /// INIT
   static Future<void> init() async {
-    const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const InitializationSettings settings = InitializationSettings(
-      android: androidSettings,
-    );
+    const settings = InitializationSettings(android: android);
 
-    await notifications.initialize(settings);
-
-    await notifications
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestNotificationsPermission();
+    await _plugin.initialize(settings);
   }
 
-  /// NOTIFIKASI DEADLINE (2 JAM SEBELUM)
-  static Future<void> scheduleDeadlineNotification({
-    required int id,
-    required String taskTitle,
-    required DateTime deadline,
+  /// 🔔 INSTANT NOTIF
+  static Future<void> showInstantNotification({
+    required String title,
+    required String body,
+    bool playSound = true,
   }) async {
-    final notificationTime =
-        deadline.subtract(const Duration(hours: 2));
+    const androidDetails = AndroidNotificationDetails(
+      'instant_channel',
+      'Instant Notification',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
 
-    if (notificationTime.isBefore(DateTime.now())) {
-      return;
-    }
+    await _plugin.show(
+      0,
+      title,
+      body,
+      NotificationDetails(android: androidDetails),
+    );
+  }
 
-    await notifications.zonedSchedule(
-      id,
-      '⏰ Deadline 2 Jam Lagi!',
-      'Tugas "$taskTitle" akan berakhir dalam 2 jam.',
-      tz.TZDateTime.from(notificationTime, tz.local),
-      const NotificationDetails(
+  /// ⏰ SCHEDULE NOTIF (H-1 JAM)
+  static Future<void> scheduleDeadlineNotification({
+    required String taskId,
+    required String title,
+    required String matkul,
+    required DateTime deadline,
+    required bool playSound,
+  }) async {
+    final scheduledTime = deadline.subtract(const Duration(hours: 1));
+
+    if (scheduledTime.isBefore(DateTime.now())) return;
+
+    await _plugin.zonedSchedule(
+      taskId.hashCode,
+      "Deadline Hampir Tiba ⏰",
+      "Tugas $matkul akan deadline 1 jam lagi",
+      tz.TZDateTime.from(scheduledTime, tz.local),
+      NotificationDetails(
         android: AndroidNotificationDetails(
           'deadline_channel',
-          'Deadline Reminder',
-          channelDescription:
-              'Notifikasi pengingat deadline tugas',
+          'Deadline Notification',
           importance: Importance.max,
           priority: Priority.high,
+          playSound: playSound,
+          enableVibration: playSound,
         ),
       ),
-      androidScheduleMode:
-          AndroidScheduleMode.exactAllowWhileIdle,
+      androidAllowWhileIdle: true,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 
-  /// NOTIFIKASI INSTAN (UNTUK TEST)
-  static Future<void> showInstantNotification({
+  /// ☁️ SAVE NOTIFICATION TO FIRESTORE
+  static Future<void> saveToFirestore({
     required String title,
-    required String body,
+    required String desc,
   }) async {
-    await notifications.show(
-      DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      title,
-      body,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'study_planner_channel',
-          'Study Planner Notifications',
-          channelDescription:
-              'Notifikasi aplikasi Study Planner',
-          importance: Importance.max,
-          priority: Priority.high,
-        ),
-      ),
-    );
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'uid': uid,
+      'title': title,
+      'desc': desc,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 }

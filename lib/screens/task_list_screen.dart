@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'edit_task_screen.dart';
 import '../widgets/task_card.dart';
 import 'task_detail_screen.dart';
 
@@ -110,9 +110,11 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 child: GestureDetector(
                   onTap: () => _viewDetail(task),
                   child: TaskCard(
+                    taskId: doc.id,
                     title: task["title"] ?? "-",
                     subtitle: task["course"] ?? "-",
                     deadline: task["deadline"] ?? "-",
+                    lokasi: task["locationName"] ?? "-",
                     status: task["status"] ??
                         "BELUM DIKERJAKAN",
 
@@ -123,8 +125,21 @@ class _TaskListScreenState extends State<TaskListScreen> {
                       );
                     },
 
-                    onEdit: () {},
-
+                    onEdit: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EditTargetScreen(
+                            taskId: doc.id,
+                            title: task["title"] ?? "",
+                            matkul: task["course"] ?? "",
+                            deadline: task["deadline"] ?? "",
+                            lokasi: task["locationName"] ?? "",
+                          ),
+                        ),
+                      );
+                    },
+                    
                     onDelete: () async {
                       await FirebaseFirestore.instance
                           .collection('tasks')

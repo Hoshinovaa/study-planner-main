@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
 import '../services/notification_service.dart';
+import '../screens/edit_task_screen.dart';
 
 class TaskCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final String deadline;
   final String status;
+  final String taskId;
+  final String lokasi;
 
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
-
   final Function(String)? onStatusChange;
 
   const TaskCard({
     super.key,
+    required this.taskId,
     required this.title,
     required this.subtitle,
     required this.deadline,
+    required this.lokasi,
     required this.status,
     this.onEdit,
     this.onDelete,
@@ -52,25 +56,33 @@ class TaskCard extends StatelessWidget {
       ),
       items: const [
         PopupMenuItem(
-            value: "BELUM DIKERJAKAN",
-            child: Text("Belum Dikerjakan")),
+          value: "BELUM DIKERJAKAN",
+          child: Text("Belum Dikerjakan"),
+        ),
         PopupMenuItem(
-            value: "DALAM PENGERJAAN",
-            child: Text("Dalam Pengerjaan")),
-        PopupMenuItem(value: "SELESAI", child: Text("Selesai")),
+          value: "DALAM PENGERJAAN",
+          child: Text("Dalam Pengerjaan"),
+        ),
+        PopupMenuItem(
+          value: "SELESAI",
+          child: Text("Selesai"),
+        ),
       ],
     );
 
     if (result != null && onStatusChange != null) {
       onStatusChange!(result);
 
+      /// 🔥 NOTIFIKASI SAAT SELESAI
       if (result == "SELESAI") {
-        Future.microtask(() async {
+        try {
           await NotificationService.showInstantNotification(
             title: "Tugas Selesai 🎉",
             body: "$title telah selesai!",
           );
-        });
+        } catch (e) {
+          debugPrint("Notification error: $e");
+        }
       }
     }
   }
@@ -91,7 +103,6 @@ class TaskCard extends StatelessWidget {
           ),
         ],
       ),
-
       child: Row(
         children: [
           Container(
@@ -109,7 +120,7 @@ class TaskCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
+                /// TITLE + STATUS
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -127,7 +138,9 @@ class TaskCard extends StatelessWidget {
                       onTap: () => _showStatusMenu(context),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: _getStatusColor(),
                           borderRadius: BorderRadius.circular(20),
