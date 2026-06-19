@@ -13,6 +13,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   DateTime _focusedDate = DateTime.now();
   DateTime _selectedDate = DateTime.now();
+  String fullName = "Pengguna";
 
   final List<String> _daysOfWeek = [
     "Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"
@@ -31,6 +32,29 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context) => const AddTargetScreen(),
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    loadUserData();
+  }
+
+  Future<void> loadUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (doc.exists) {
+      setState(() {
+        fullName = doc.data()?['fullName'] ?? "Pengguna";
+      });
+    }
   }
 
   @override
@@ -66,18 +90,23 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
+          children: [
             Text(
-              "Halo, SUNNY 😊",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              "Halo, $fullName 😊",
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            Text("Selamat Belajar Bestie."),
+            const Text(
+              "Selamat Belajar Bestie.",
+            ),
           ],
         ),
       ],
     );
   }
-
+  
   // ================= SECTION HEADER =================
   Widget _buildSectionHeader() {
     return Row(
