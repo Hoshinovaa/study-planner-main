@@ -4,6 +4,8 @@ import 'package:geocoding/geocoding.dart';
 import 'map_picker_screen.dart';
 import '../services/notification_service.dart';
 import '../services/firestore_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AddTargetScreen extends StatefulWidget {
   const AddTargetScreen({super.key});
@@ -145,6 +147,15 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
     lat: selectedLocation?.latitude,
     lng: selectedLocation?.longitude,
   );
+
+  await FirebaseFirestore.instance
+      .collection('notifications')
+      .add({
+    'uid': FirebaseAuth.instance.currentUser!.uid,
+    'title': 'Tugas Baru Ditambahkan',
+    'desc': _titleController.text,
+    'createdAt': FieldValue.serverTimestamp(),
+  });
 
   if (selectedDeadline != null) {
     await NotificationService.scheduleDeadlineNotification(

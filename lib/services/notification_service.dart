@@ -5,23 +5,24 @@ class NotificationService {
   static final FlutterLocalNotificationsPlugin notifications =
       FlutterLocalNotificationsPlugin();
 
+  /// INIT
   static Future<void> init() async {
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const InitializationSettings settings =
-        InitializationSettings(
+    const InitializationSettings settings = InitializationSettings(
       android: androidSettings,
     );
 
     await notifications.initialize(settings);
 
     await notifications
-    .resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>()
-    ?.requestNotificationsPermission();
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
   }
 
+  /// NOTIFIKASI DEADLINE (2 JAM SEBELUM)
   static Future<void> scheduleDeadlineNotification({
     required int id,
     required String taskTitle,
@@ -53,6 +54,28 @@ class NotificationService {
           AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
+    );
+  }
+
+  /// NOTIFIKASI INSTAN (UNTUK TEST)
+  static Future<void> showInstantNotification({
+    required String title,
+    required String body,
+  }) async {
+    await notifications.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      title,
+      body,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'study_planner_channel',
+          'Study Planner Notifications',
+          channelDescription:
+              'Notifikasi aplikasi Study Planner',
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+      ),
     );
   }
 }

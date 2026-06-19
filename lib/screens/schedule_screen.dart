@@ -1,31 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import '../services/notification_service.dart';
 
 class ScheduleScreen extends StatelessWidget {
   const ScheduleScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, String>> notifications = [
-      {
-        "title": "Tugas Hampir Deadline!",
-        "desc": "Progres Tubes - Aplikasi Perangkat Bergerak",
-        "time": "Hari ini, 23:59"
-      },
-      {
-        "title": "Reminder Belajar",
-        "desc": "Jangan lupa lanjut Sistem Cerdas ya!",
-        "time": "Hari ini, 10:00"
-      },
-      {
-        "title": "Tugas Selesai 🎉",
-        "desc": "Penetrasi dan Pengujian Etika Peretasan",
-        "time": "Kemarin"
-      },
-    ];
+    final uid = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
       backgroundColor: const Color(0xFFECEFF1),
 
+      // UI atas dipertahankan
       appBar: AppBar(
         backgroundColor: const Color(0xFF6A0DAD),
         elevation: 0,
@@ -39,73 +28,123 @@ class ScheduleScreen extends StatelessWidget {
         ),
       ),
 
-      body: notifications.isEmpty
+      body: uid == null
           ? const Center(
               child: Text(
-                "Belum ada notifikasi",
+                "Silakan login terlebih dahulu.",
                 style: TextStyle(color: Colors.grey),
               ),
             )
-          : ListView.builder(
-              padding: const EdgeInsets.all(15),
-              itemCount: notifications.length,
-              itemBuilder: (context, index) {
-                final notif = notifications[index];
+          : StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection("notifications")
+                  .where("uid", isEqualTo: uid)
+                  .orderBy("createdAt", descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
 
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      "Belum ada notifikasi",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  );
+                }
+
+                final notifications = snapshot.data!.docs;
+
+                return ListView.builder(
                   padding: const EdgeInsets.all(15),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(15),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
+                  itemCount: notifications.length,
+                  itemBuilder: (context, index) {
+                    final data =
+                        notifications[index].data() as Map<String, dynamic>;
+
+                    final title = data["title"]?.toString() ?? "";
+                    final desc = data["desc"]?.toString() ?? "";
+
+                    String time = "";
+                    if (data["createdAt"] != null &&
+                        data["createdAt"] is Timestamp) {
+                      final ts = data["createdAt"] as Timestamp;
+                      time = ts.toDate().toString();
+                    }
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(15),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildIcon(notif["title"]!),
-                      const SizedBox(width: 12),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildIcon(title),
+                          const SizedBox(width: 12),
 
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              notif["title"]!,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
 
-                            Text(
-                              notif["desc"]!,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            const SizedBox(height: 6),
+                                Text(
+                                  desc,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                                const SizedBox(height: 6),
 
-                            Text(
-                              notif["time"]!,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey,
-                              ),
+                                Text(
+                                  time,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 );
               },
             ),
+
+      // Tombol tes notifikasi manual
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color(0xFF6A0DAD),
+        onPressed: () async {
+          await NotificationService.showInstantNotification(
+            title: "Tes Notifikasi",
+            body: "Ini adalah notifikasi percobaan dari Study Planner 🎉",
+          );
+        },
+        icon: const Icon(Icons.notifications),
+        label: const Text("Tes Notif"),
+      ),
     );
   }
 
