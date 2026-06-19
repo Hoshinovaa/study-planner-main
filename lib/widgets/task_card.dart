@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/notification_service.dart';
 
 class TaskCard extends StatelessWidget {
   final String title;
@@ -50,14 +51,27 @@ class TaskCard extends StatelessWidget {
         0,
       ),
       items: const [
-        PopupMenuItem(value: "BELUM DIKERJAKAN", child: Text("Belum Dikerjakan")),
-        PopupMenuItem(value: "DALAM PENGERJAAN", child: Text("Dalam Pengerjaan")),
+        PopupMenuItem(
+            value: "BELUM DIKERJAKAN",
+            child: Text("Belum Dikerjakan")),
+        PopupMenuItem(
+            value: "DALAM PENGERJAAN",
+            child: Text("Dalam Pengerjaan")),
         PopupMenuItem(value: "SELESAI", child: Text("Selesai")),
       ],
     );
 
     if (result != null && onStatusChange != null) {
       onStatusChange!(result);
+
+      if (result == "SELESAI") {
+        Future.microtask(() async {
+          await NotificationService.showInstantNotification(
+            title: "Tugas Selesai 🎉",
+            body: "$title telah selesai!",
+          );
+        });
+      }
     }
   }
 

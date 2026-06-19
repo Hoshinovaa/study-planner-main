@@ -52,8 +52,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          "Pengaturan",
-          style: TextStyle(color: Colors.white),
+          "Pengaturan Notifikasi",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
 
@@ -65,11 +65,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               "Peringatan Deadline",
               deadline,
               (val) => setState(() => deadline = val),
-            ),
-            buildSwitch(
-              "Harian",
-              harian,
-              (val) => setState(() => harian = val),
             ),
             buildSwitch(
               "Bunyikan",

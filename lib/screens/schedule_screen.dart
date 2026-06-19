@@ -14,7 +14,6 @@ class ScheduleScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFECEFF1),
 
-      // UI atas dipertahankan
       appBar: AppBar(
         backgroundColor: const Color(0xFF6A0DAD),
         elevation: 0,
@@ -142,8 +141,14 @@ class ScheduleScreen extends StatelessWidget {
             body: "Ini adalah notifikasi percobaan dari Study Planner 🎉",
           );
         },
-        icon: const Icon(Icons.notifications),
-        label: const Text("Tes Notif"),
+        icon: const Icon(
+          Icons.notifications,
+          color: Colors.white,
+        ),
+        label: const Text(
+          "Tes Notif",
+          style: TextStyle(color: Colors.white),
+        ),
       ),
     );
   }
