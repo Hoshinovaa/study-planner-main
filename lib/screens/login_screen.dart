@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../services/auth_services.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,15 +13,28 @@ class _LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
+  bool obscurePassword = true;
   bool isLoading = false;
 
   Future<void> login() async {
+    if (emailController.text.trim().isEmpty ||
+        passwordController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Email dan password wajib diisi"),
+        ),
+      );
+      return;
+    }
+
     try {
       setState(() {
         isLoading = true;
       });
 
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final authService = AuthService();
+
+      await authService.login(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
@@ -36,13 +50,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (e.code == 'user-not-found') {
         message = "Email tidak ditemukan";
-      }
-
-      if (e.code == 'wrong-password') {
+      } else if (e.code == 'wrong-password') {
         message = "Password salah";
-      }
-
-      if (e.code == 'invalid-credential') {
+      } else if (e.code == 'invalid-credential') {
         message = "Email atau password salah";
       }
 
@@ -50,9 +60,34 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(content: Text(message)),
       );
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> loginGoogle() async {
+    try {
+      final authService = AuthService();
+
+      final result = await authService.loginWithGoogle();
+
+      if (result != null && mounted) {
+        Navigator.pushReplacementNamed(
+          context,
+          '/home',
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Google Login Gagal: $e",
+          ),
+        ),
+      );
     }
   }
 
@@ -63,20 +98,42 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  Widget socialIcon(String text) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 18,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 25),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            left: 25,
+            right: 25,
+            top: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
           child: Column(
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 20),
 
-              Row(
+              const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
+                children: [
                   Text(
                     "📖",
                     style: TextStyle(fontSize: 28),
@@ -96,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 30),
 
               const Text(
-                "SELAMAT DATANG ",
+                "SELAMAT DATANG",
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                 ),
@@ -108,7 +165,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 30),
 
-              /// EMAIL
               TextField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -125,15 +181,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 15),
 
-              /// PASSWORD
               TextField(
                 controller: passwordController,
-                obscureText: true,
+                obscureText: obscurePassword,
                 decoration: InputDecoration(
                   hintText: "Password",
                   filled: true,
                   fillColor: Colors.white,
-                  suffixIcon: const Icon(Icons.visibility_off),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        obscurePassword = !obscurePassword;
+                      });
+                    },
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
                     borderSide: BorderSide.none,
@@ -177,15 +243,14 @@ class _LoginScreenState extends State<LoginScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  socialIcon("G"),
-                  const SizedBox(width: 15),
-                  socialIcon(""),
-                  const SizedBox(width: 15),
-                  socialIcon("f"),
+                  GestureDetector(
+                    onTap: loginGoogle,
+                    child: socialIcon("G"),
+                  ),
                 ],
               ),
 
-              const Spacer(),
+              const SizedBox(height: 40),
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -212,22 +277,6 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 20),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget socialIcon(String text) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 18,
         ),
       ),
     );

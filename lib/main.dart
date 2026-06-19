@@ -11,6 +11,7 @@ import 'services/notification_service.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,17 +34,16 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      initialRoute: '/',
+
+      home: FirebaseAuth.instance.currentUser != null
+          ? MainScreen()
+          : LoginScreen(),
 
       routes: {
-        '/': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
         '/home': (context) => MainScreen(),
-
-        // detail
         '/add-target': (context) => AddTargetScreen(),
         '/schedule': (context) => ScheduleScreen(),
-
         '/login': (context) => LoginScreen(),
         '/profile': (context) => const ProfileScreen(),
         '/settings': (context) => const SettingsScreen(),
