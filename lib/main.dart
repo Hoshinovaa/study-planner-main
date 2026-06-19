@@ -5,6 +5,8 @@ import 'screens/register_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/add_target_screen.dart';
 import 'screens/schedule_screen.dart';
+import 'screens/profile_screen.dart';
+import 'screens/setting_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -29,6 +31,8 @@ class MyApp extends StatelessWidget {
         '/schedule': (context) => ScheduleScreen(),
 
         '/login': (context) => LoginScreen(),
+        '/profile': (context) => const ProfileScreen(),
+        '/settings': (context) => const SettingsScreen(),
       },
     );
   }

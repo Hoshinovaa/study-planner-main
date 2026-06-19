@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
-import '../widgets/custom_bottom_nav.dart';
 
-class SettingScreen extends StatefulWidget {
-  const SettingScreen({super.key});
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
 
   @override
-  State<SettingScreen> createState() => _SettingScreenState();
+  State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingScreenState extends State<SettingScreen> {
+class _SettingsScreenState extends State<SettingsScreen> {
   bool deadline = true;
   bool harian = true;
   bool bunyikan = true;
 
-  Widget buildSwitch(String title, bool value, Function(bool) onChanged) {
+  Widget buildSwitch(
+      String title,
+      bool value,
+      Function(bool) onChanged,
+      ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -37,15 +40,6 @@ class _SettingScreenState extends State<SettingScreen> {
     );
   }
 
-  /// LOGOUT FUNCTION
-  void _logout() {
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/login', // pastikan route ini ada di main.dart
-      (route) => false,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,14 +47,9 @@ class _SettingScreenState extends State<SettingScreen> {
 
       appBar: AppBar(
         backgroundColor: const Color(0xFF6A0DAD),
-        elevation: 0,
-        centerTitle: true,
         title: const Text(
           "Pengaturan",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white),
         ),
       ),
 
@@ -68,37 +57,20 @@ class _SettingScreenState extends State<SettingScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-
-            /// 🔧 SWITCHES
-            buildSwitch("Peringatan Deadline", deadline,
-                (val) => setState(() => deadline = val)),
-            buildSwitch("Harian", harian,
-                (val) => setState(() => harian = val)),
-            buildSwitch("Bunyikan", bunyikan,
-                (val) => setState(() => bunyikan = val)),
-
-            const Spacer(),
-
-            /// LOGOUT BUTTON
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _logout,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6A0DAD),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  "Logout",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+            buildSwitch(
+              "Peringatan Deadline",
+              deadline,
+              (val) => setState(() => deadline = val),
+            ),
+            buildSwitch(
+              "Harian",
+              harian,
+              (val) => setState(() => harian = val),
+            ),
+            buildSwitch(
+              "Bunyikan",
+              bunyikan,
+              (val) => setState(() => bunyikan = val),
             ),
           ],
         ),

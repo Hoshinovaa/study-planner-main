@@ -32,8 +32,8 @@ class CustomBottomNav extends StatelessWidget {
           label: "Jadwal",
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
-          label: "Pengaturan",
+          icon: Icon(Icons.account_circle),
+          label: "Profil",
         ),
       ],
     );

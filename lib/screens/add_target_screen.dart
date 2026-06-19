@@ -23,11 +23,32 @@ class _AddTargetScreenState extends State<AddTargetScreen> {
 
   /// TANGGAL
   Future<void> _pickDate() async {
+    final today = DateTime.now();
+
     DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
+      initialDate: today,
+      firstDate: DateTime(
+        today.year,
+        today.month,
+        today.day,
+      ),
       lastDate: DateTime(2100),
+      selectableDayPredicate: (DateTime day) {
+        final currentDay = DateTime(
+          day.year,
+          day.month,
+          day.day,
+        );
+
+        final todayOnly = DateTime(
+          today.year,
+          today.month,
+          today.day,
+        );
+
+        return !currentDay.isBefore(todayOnly);
+      },
     );
 
     if (picked != null) {

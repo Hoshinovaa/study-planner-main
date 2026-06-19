@@ -343,18 +343,31 @@ class _HomeScreenState extends State<HomeScreen> {
 
               int day = index - offset + 1;
 
+              DateTime today = DateTime.now();
+
+              DateTime currentDate = DateTime(
+                _focusedDate.year,
+                _focusedDate.month,
+                day,
+              );
+
+              bool isPastDate = currentDate.isBefore(
+                DateTime(today.year, today.month, today.day),
+              );
+
               bool isSelected =
                   day == _selectedDate.day &&
-                      _focusedDate.month == _selectedDate.month &&
-                      _focusedDate.year == _selectedDate.year;
+                  _focusedDate.month == _selectedDate.month &&
+                  _focusedDate.year == _selectedDate.year;
 
               return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedDate = DateTime(
-                        _focusedDate.year, _focusedDate.month, day);
-                  });
-                },
+                onTap: isPastDate
+                    ? null
+                    : () {
+                        setState(() {
+                          _selectedDate = currentDate;
+                        });
+                      },
                 child: Center(
                   child: Container(
                     width: 35,
@@ -362,16 +375,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? Colors.deepPurple
-                          : Colors.transparent,
+                          : isPastDate
+                              ? Colors.grey.shade200
+                              : Colors.transparent,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
                       child: Text(
                         "$day",
                         style: TextStyle(
-                          color:
-                              isSelected ? Colors.white : Colors.black,
+                          color: isSelected
+                              ? Colors.white
+                              : isPastDate
+                                  ? Colors.grey
+                                  : Colors.black,
                           fontSize: 12,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
                     ),

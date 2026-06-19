@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'home.dart';
 import 'task_list_screen.dart';
 import 'schedule_screen.dart';
-import 'setting_screen.dart';
+import 'profile_screen.dart';
 import '../widgets/custom_bottom_nav.dart';
 
 class MainScreen extends StatefulWidget {
@@ -19,7 +19,7 @@ class _MainScreenState extends State<MainScreen> {
     HomeScreen(),
     TaskListScreen(),
     ScheduleScreen(),
-    SettingScreen(),
+    ProfileScreen(),
   ];
 
   @override
