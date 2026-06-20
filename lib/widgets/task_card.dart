@@ -76,7 +76,7 @@ class TaskCard extends StatelessWidget {
       /// NOTIFIKASI SAAT SELESAI
       if (result == "SELESAI") {
         try {
-          await NotificationService.showInstantNotification(
+          await NotificationService.createNotification(
             title: "Tugas Selesai 🎉",
             body: "$title telah selesai!",
           );

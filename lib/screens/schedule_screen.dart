@@ -38,7 +38,6 @@ class ScheduleScreen extends StatelessWidget {
               stream: FirebaseFirestore.instance
                   .collection("notifications")
                   .where("uid", isEqualTo: uid)
-                  .orderBy("createdAt", descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -136,7 +135,7 @@ class ScheduleScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xFF6A0DAD),
         onPressed: () async {
-          await NotificationService.showInstantNotification(
+          await NotificationService.createNotification(
             title: "Tes Notifikasi",
             body: "Ini adalah notifikasi percobaan dari Study Planner 🎉",
           );
